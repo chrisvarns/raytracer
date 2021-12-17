@@ -17,17 +17,17 @@ public:
 
 bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const
 {
-	const vec3 oc = r.origin() - center;
+	const vec3 oc = r.origin - center;
 	const auto a = r.dir.length_squared();
 	const auto half_b = dot(oc, r.dir);
 	const auto c = oc.length_squared() - radius*radius;
 
-	auto discriminant = half_b*half_b - a*c;
+	const auto discriminant = half_b*half_b - a*c;
 	if (discriminant < 0) return false;
-	auto sqrtd = sqrt(discriminant);
+	const auto sqrtd = sqrt(discriminant);
 
 	// Find the nearest root that lies in the acceptable range
-	const auto root = (-half_b - sqrtd) / a;
+	auto root = (-half_b - sqrtd) / a;
 	if (root < t_min || t_max < root)
 	{
 		root = (-half_b + sqrtd) / a;
