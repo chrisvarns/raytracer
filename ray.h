@@ -11,9 +11,9 @@ public:
 
 	point3 at(double t) const
 	{
-		return orig + t*dir;
+		return origin + t*dir;
 	}
 
 	point3 origin;
-	vec3 direction;
+	vec3 dir;
 };

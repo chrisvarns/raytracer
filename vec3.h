@@ -8,6 +8,11 @@ using std::sqrt;
 class vec3
 {
 public:
+
+	union { double x; double r; };
+	union { double y; double g; };
+	union { double z; double b; };
+
 	vec3() = default;
 	vec3(double x_, double y_, double z_) : x(x_), y(y_), z(z_) {}
 
