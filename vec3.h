@@ -51,6 +51,13 @@ public:
 		return x*x + y*y + z*z;
 	}
 
+	bool near_zero() const
+	{
+		// return true if the vector is close to zero in all dimensions
+		const auto s = 1e-8;
+		return fabs(x) < s && fabs(y) < s && fabs(z) < s;
+	}
+
 	static vec3 random()
 	{
 		return vec3(random_double(), random_double(), random_double());
@@ -113,6 +120,11 @@ vec3 cross(const vec3& u, const vec3& v)
 vec3 normalize(const vec3& v)
 {
 	return v/v.length();
+}
+
+vec3 reflect(const vec3& v, const vec3& n)
+{
+	return v - 2*dot(v, n)*n;
 }
 
 vec3 random_in_unit_sphere()
