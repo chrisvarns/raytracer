@@ -59,9 +59,13 @@ public:
 		const double refraction_ratio = rec.front_face ? (1.0/ir) : ir;
 
 		const vec3 unit_direction = normalize(r_in.dir);
-		const vec3 refracted = refract(unit_direction, rec.normal, refraction_ratio);
+		const double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
+		const double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
 
-		scattered = ray(rec.p, refracted);
+		const bool cannot_refract = refraction_ratio * sin_theta > 1.0;
+		const vec3 direction = cannot_refract ? reflect(unit_direction, rec.normal) : refract(unit_direction, rec.normal, refraction_ratio);
+
+		scattered = ray(rec.p, direction);
 		return true;
 	}
 
