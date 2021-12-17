@@ -63,11 +63,22 @@ public:
 		const double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
 
 		const bool cannot_refract = refraction_ratio * sin_theta > 1.0;
-		const vec3 direction = cannot_refract ? reflect(unit_direction, rec.normal) : refract(unit_direction, rec.normal, refraction_ratio);
+		const vec3 direction = cannot_refract || reflectance(cos_theta, refraction_ratio) > random_double()
+			? reflect(unit_direction, rec.normal)
+			: refract(unit_direction, rec.normal, refraction_ratio);
 
 		scattered = ray(rec.p, direction);
 		return true;
 	}
 
 	double ir; // index of refraction
+
+private:
+	static double reflectance(double cosine, double ref_idx)
+	{
+		// use schlick's approximation for reflectance
+		auto r0 = (1.0-ref_idx) / (1.0+ref_idx);
+		r0 = r0*r0;
+		return r0 + (1.0-r0)*pow(1.0-cosine, 5.0);
+	}
 };
