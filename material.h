@@ -47,3 +47,23 @@ public:
 	color albedo;
 	double fuzz;
 };
+
+class dielectric : public material
+{
+public:
+	dielectric(double ir_) : ir(ir_) {}
+
+	virtual bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered) const override
+	{
+		attenuation = color(1.0, 1.0, 1.0);
+		const double refraction_ratio = rec.front_face ? (1.0/ir) : ir;
+
+		const vec3 unit_direction = normalize(r_in.dir);
+		const vec3 refracted = refract(unit_direction, rec.normal, refraction_ratio);
+
+		scattered = ray(rec.p, refracted);
+		return true;
+	}
+
+	double ir; // index of refraction
+};
