@@ -47,13 +47,16 @@ int main()
 
 	auto sphere_ground = make_shared<sphere>(point3(0.0, -100.5, -1.0), 100.0, material_ground);
 	auto sphere_center = make_shared<sphere>(point3(0.0, 0.0, -1.0), 0.5, material_center);
-	auto sphere_left = make_shared<sphere>(point3(-1.0, 0.0, -1.0), 0.5, material_dielectric);
 	auto sphere_right = make_shared<sphere>(point3(1.0, 0.0, -1.0), 0.5, material_right);
+
+	auto sphere_left = make_shared<sphere>(point3(-1.0, 0.0, -1.0), 0.5, material_dielectric);
+	auto sphere_left_inner = make_shared<sphere>(point3(-1.0, 0.0, -1.0), -0.4, material_dielectric);
 
 	world.add(sphere_ground);
 	world.add(sphere_center);
-	world.add(sphere_left);
 	world.add(sphere_right);
+	world.add(sphere_left);
+	world.add(sphere_left_inner);
 
 	// Camera
 	camera cam;
