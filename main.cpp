@@ -116,6 +116,7 @@ int main()
 	oidn::FilterRef albedofilter = device.newFilter("RT");
 	albedofilter.setImage("albedo", albedo_ms_buffer, oidn::Format::Float3, image_width, image_height);
 	albedofilter.setImage("output", albedo_ms_buffer, oidn::Format::Float3, image_width, image_height);
+	albedofilter.set("srgb", true);
 	albedofilter.commit();
 	albedofilter.execute();
 
@@ -124,7 +125,8 @@ int main()
 	filter.setImage("color", color_buffer, oidn::Format::Float3, image_width, image_height);
 	filter.setImage("albedo", albedo_ms_buffer, oidn::Format::Float3, image_width, image_height);
 	filter.setImage("output", denoised_buffer, oidn::Format::Float3, image_width, image_height);
-	filter.set("cleanAux", true); // auxiliary images will be prefiltered
+	filter.set("cleanAux", true);
+	filter.set("srgb", true);
 	filter.commit();
 	filter.execute();
 
