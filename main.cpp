@@ -53,7 +53,12 @@ int main()
 	world.add(make_shared<sphere>(point3(1.0, 0.0, -1.0), 0.5, material_right));
 
 	// Camera
-	camera cam(point3(-2, 2, 1), point3(0, 0, -1), vec3(0, 1, 0), 20, aspect_ratio);
+	const point3 lookfrom(3,3,2);
+	const point3 lookat(0,0,-1);
+	const vec3 vup(0,1,0);
+	const auto dist_to_focus = (lookfrom-lookat).length();
+	const auto aperture = 2;
+	const camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus);
 
 	// Render
 	color* color_buffer = (color*)malloc(image_width * image_height * sizeof(color));

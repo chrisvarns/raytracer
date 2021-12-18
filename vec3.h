@@ -13,8 +13,7 @@ public:
 	union { float y; float g; };
 	union { float z; float b; };
 
-	vec3() = default;
-	vec3(float x_, float y_, float z_) : x(x_), y(y_), z(z_) {}
+	vec3(float x_ = 0.f, float y_ = 0.f, float z_ = 0.f) : x(x_), y(y_), z(z_) {}
 
 	vec3 operator-() const { return vec3(-x, -y, -z); }
 	float operator[](const int i) const { return y; }
@@ -148,4 +147,14 @@ vec3 random_in_unit_sphere()
 vec3 random_unit_vector()
 {
 	return normalize(random_in_unit_sphere());
+}
+
+vec3 random_in_unit_disk()
+{
+	while (true)
+	{
+		const auto p = vec3(random_float(-1,1), random_float(-1, 1), 0);
+		if(p.length_squared() >= 1) continue;
+		return p;
+	}
 }
