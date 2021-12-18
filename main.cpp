@@ -8,6 +8,11 @@
 #include "OpenImageDenoise/oidn.hpp"
 #include "stb_image_write.h"
 
+#include <chrono>
+#include <mutex>
+#include <queue>
+#include <thread>
+
 color ray_world_albedo(const ray& r)
 {
 	const vec3 unit_direction = normalize(r.dir);
@@ -49,9 +54,9 @@ int main()
 {
 	// Image
 	const auto aspect_ratio = 16.0 / 9.0;
-	const int image_width = 800;
+	const int image_width = 1280;
 	const int image_height = static_cast<int>(image_width / aspect_ratio);
-	const int samples_per_pixel = 24;
+	const int samples_per_pixel = 64;
 	const int max_depth = 50;
 
 	// World
@@ -76,33 +81,77 @@ int main()
 	const auto aperture = 0;
 	const camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus);
 
-	// Render
+	// Buffers
 	color* color_buffer = (color*)malloc(image_width * image_height * sizeof(color));
 	color* albedo_ms_buffer = (color*)malloc(image_width * image_height * sizeof(color));
-	for (int j = image_height - 1; j >= 0; --j)
+
+	// Queue of jobs (rows to do)
+	std::queue<int> remaining_rows;
+	for (int i = 0; i < image_height; i++)
 	{
-		std::cout << "\rScanlines remaining: " << j << ' ' << std::flush;
-		for (int i = 0; i < image_width; ++i)
+		remaining_rows.push(i);
+	}
+
+	// Task the threads will do:
+	std::mutex queue_mutex;
+	auto thread_task = [&]()
+	{
+		while (true)
 		{
-			const int buffer_idx = image_width*(image_height-1-j) + i;
-
-			color& sampled_color = color_buffer[buffer_idx];
-			color& albedo_ms = albedo_ms_buffer[buffer_idx];
-			sampled_color = albedo_ms = color();
-
-			for (int s = 0; s < samples_per_pixel; ++s)
+			int row_idx;
 			{
-				const auto u = (i+random_float()) / (image_width-1);
-				const auto v = (j+random_float()) / (image_height-1);
-				const ray r = cam.get_ray(u, v);
-
-				albedo_ms += ray_albedo(r, world);
-				sampled_color += ray_color(r, world, max_depth);
+				std::unique_lock<std::mutex> lock(queue_mutex);
+				if (remaining_rows.empty()) return;
+				row_idx = remaining_rows.front();
+				remaining_rows.pop();
 			}
 
-			resolve_samples(sampled_color, samples_per_pixel);
-			resolve_samples(albedo_ms, samples_per_pixel);
+			for (int i = 0; i < image_width; ++i)
+			{
+				const int buffer_idx = image_width * (image_height - 1 - row_idx) + i;
+
+				color& sampled_color = color_buffer[buffer_idx];
+				color& albedo_ms = albedo_ms_buffer[buffer_idx];
+				sampled_color = albedo_ms = color();
+
+				for (int s = 0; s < samples_per_pixel; ++s)
+				{
+					const auto u = (i + random_float()) / (image_width - 1);
+					const auto v = (row_idx + random_float()) / (image_height - 1);
+					const ray r = cam.get_ray(u, v);
+
+					albedo_ms += ray_albedo(r, world);
+					sampled_color += ray_color(r, world, max_depth);
+				}
+
+				resolve_samples(sampled_color, samples_per_pixel);
+				resolve_samples(albedo_ms, samples_per_pixel);
+			}
 		}
+	};
+
+	// Spawn worker threads
+	std::vector<std::thread> threads;
+	auto num_threads = std::thread::hardware_concurrency();
+	for (auto i = num_threads -1; i > 0; i--)
+	{
+		threads.push_back(std::thread(thread_task));
+	}
+	// Print num remaining while we wait
+	while (true)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		size_t num_remaining;
+		{
+			std::unique_lock<std::mutex> lock(queue_mutex);
+			num_remaining = remaining_rows.size();
+		}
+		if (num_remaining == 0) break;
+		std::cout << "\rScanlines remaining: " << num_remaining << ' ' << std::flush;
+	}
+	for (auto i = 0; i < threads.size(); i++)
+	{
+		threads[i].join();
 	}
 
 	std::cout << "\nDone.\nDenoising... ";
@@ -119,6 +168,13 @@ int main()
 	albedofilter.set("srgb", true);
 	albedofilter.commit();
 	albedofilter.execute();
+
+	// prefilter the normal
+	/*oidn::FilterRef normalfilter = device.newFilter("RT");
+	normalfilter.setImage("normal", normal_ms_buffer, oidn::Format::Float3, image_width, image_height);
+	normalfilter.setImage("output", normal_ms_buffer, oidn::Format::Float3, image_width, image_height);
+	normalfilter.commit();
+	normalfilter.execute();*/
 
 	// filter the color
 	oidn::FilterRef filter = device.newFilter("RT");
