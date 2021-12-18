@@ -8,25 +8,41 @@
 #include "OpenImageDenoise/oidn.hpp"
 #include "stb_image_write.h"
 
+color ray_world_albedo(const ray& r)
+{
+	const vec3 unit_direction = normalize(r.dir);
+	const auto t = 0.5 * (unit_direction.y + 1.0);
+	return (1.0 - t) * color(1.0, 1.0, 1.0) + t * color(0.5, 0.7, 1.0);
+}
+
+color ray_albedo(const ray& r, const hittable& world)
+{
+	hit_record rec;
+	if (world.hit(r, 0.001, infinity, rec))
+	{
+		return rec.mat_ptr->get_albedo();
+	}
+
+	return ray_world_albedo(r);
+}
+
 color ray_color(const ray& r, const hittable& world, int depth)
 {
 	hit_record rec;
 
 	// if we've exceeded the ray bounce limit, no more light is gathered
-	if(depth <= 0)
-		return color(0,0,0);
+	if (depth <= 0)
+		return color(0, 0, 0);
 
 	if (world.hit(r, 0.001, infinity, rec))
 	{
 		ray scattered;
 		color attenuation;
-		if(rec.mat_ptr->scatter(r, rec, attenuation, scattered))
-			return attenuation * ray_color(scattered, world, depth-1);
+		if (rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+			return attenuation * ray_color(scattered, world, depth - 1);
 	}
 
-	const vec3 unit_direction = normalize(r.dir);
-	const auto t = 0.5 * (unit_direction.y + 1.0);
-	return (1.0 - t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+	return ray_world_albedo(r);
 }
 
 int main()
@@ -57,27 +73,35 @@ int main()
 	const point3 lookat(0,0,-1);
 	const vec3 vup(0,1,0);
 	const auto dist_to_focus = (lookfrom-lookat).length();
-	const auto aperture = 2;
+	const auto aperture = 0;
 	const camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus);
 
 	// Render
 	color* color_buffer = (color*)malloc(image_width * image_height * sizeof(color));
-	color* color_buffer_pointer = color_buffer;
+	color* albedo_ms_buffer = (color*)malloc(image_width * image_height * sizeof(color));
 	for (int j = image_height - 1; j >= 0; --j)
 	{
 		std::cout << "\rScanlines remaining: " << j << ' ' << std::flush;
-		for (int i = 0; i < image_width; ++i, ++color_buffer_pointer)
+		for (int i = 0; i < image_width; ++i)
 		{
-			*color_buffer_pointer = color(0,0,0);
+			const int buffer_idx = image_width*(image_height-1-j) + i;
+
+			color& sampled_color = color_buffer[buffer_idx];
+			color& albedo_ms = albedo_ms_buffer[buffer_idx];
+			sampled_color = albedo_ms = color();
+
 			for (int s = 0; s < samples_per_pixel; ++s)
 			{
 				const auto u = (i+random_float()) / (image_width-1);
 				const auto v = (j+random_float()) / (image_height-1);
 				const ray r = cam.get_ray(u, v);
-				*color_buffer_pointer += ray_color(r, world, max_depth);
+
+				albedo_ms += ray_albedo(r, world);
+				sampled_color += ray_color(r, world, max_depth);
 			}
 
-			resolve_samples(*color_buffer_pointer, samples_per_pixel);
+			resolve_samples(sampled_color, samples_per_pixel);
+			resolve_samples(albedo_ms, samples_per_pixel);
 		}
 	}
 
@@ -89,6 +113,7 @@ int main()
 	device.commit();
 	oidn::FilterRef filter = device.newFilter("RT");
 	filter.setImage("color", color_buffer, oidn::Format::Float3, image_width, image_height);
+	filter.setImage("albedo", albedo_ms_buffer, oidn::Format::Float3, image_width, image_height);
 	filter.setImage("output", denoised_buffer, oidn::Format::Float3, image_width, image_height);
 	filter.commit();
 	filter.execute();
@@ -96,22 +121,19 @@ int main()
 	std::cout << "Done.\nWriting files... ";
 
 	unsigned char* rgb888_buffer = (unsigned char*)malloc(image_width * image_height * 3);
-	unsigned char* rgb888_buffer_ptr = rgb888_buffer;
-	color_buffer_pointer = color_buffer;
 
 	// First write the pre-denoised
-	for (int i = 0; i < image_width * image_height; ++i, ++color_buffer_pointer, rgb888_buffer_ptr += 3)
+	for (int i = 0; i < image_width * image_height; ++i)
 	{
-		write_color(rgb888_buffer_ptr, *color_buffer_pointer, samples_per_pixel);
+		write_color(rgb888_buffer + i*3, color_buffer[i], samples_per_pixel);
 	}
 	stbi_write_png("predenoise.png", image_width, image_height, 3, rgb888_buffer, 0);
 
 	// Then write the denoised
-	rgb888_buffer_ptr = rgb888_buffer;
-	color_buffer_pointer = denoised_buffer;
-	for (int i = 0; i < image_width * image_height; ++i, ++color_buffer_pointer, rgb888_buffer_ptr += 3)
+	filter.execute();
+	for (int i = 0; i < image_width * image_height; ++i)
 	{
-		write_color(rgb888_buffer_ptr, *color_buffer_pointer, samples_per_pixel);
+		write_color(rgb888_buffer + i*3, denoised_buffer[i], samples_per_pixel);
 	}
 	stbi_write_png("postdenoise.png", image_width, image_height, 3, rgb888_buffer, 0);
 

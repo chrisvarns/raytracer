@@ -7,6 +7,7 @@ struct hit_record;
 class material
 {
 public:
+	virtual color get_albedo() const = 0;
 	virtual bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered) const = 0;
 };
 
@@ -28,6 +29,8 @@ public:
 		return true;
 	}
 
+	virtual color get_albedo() const override { return albedo; }
+
 	color albedo;
 };
 
@@ -43,6 +46,8 @@ public:
 		attenuation = albedo;
 		return dot(scattered.dir, rec.normal) > 0;
 	}
+
+	virtual color get_albedo() const override { return albedo; }
 
 	color albedo;
 	float fuzz;
@@ -70,6 +75,8 @@ public:
 		scattered = ray(rec.p, direction);
 		return true;
 	}
+
+	virtual color get_albedo() const override { return color(1,1,1); }
 
 	float ir; // index of refraction
 
