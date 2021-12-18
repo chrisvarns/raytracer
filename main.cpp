@@ -105,6 +105,17 @@ hittable_list two_spheres()
 	return objects;
 }
 
+hittable_list two_perlin_spheres()
+{
+	hittable_list objects;
+
+	const auto lambert = make_shared<lambertian>(make_shared<noise_texture>());
+	objects.add(make_shared<sphere>(point3(0, -1000, 0), 1000, lambert));
+	objects.add(make_shared<sphere>(point3(0, 2, 0), 2, lambert));
+
+	return objects;
+}
+
 int main()
 {
 	// Image
@@ -127,9 +138,15 @@ int main()
 			vfov = 20;
 			aperture = 0.1;
 			break;
-		default:
 		case 2:
 			world = two_spheres();
+			lookfrom = point3(13,2,3);
+			lookat = point3(0,0,0);
+			vfov = 20;
+			break;
+		default:
+		case 3:
+			world = two_perlin_spheres();
 			lookfrom = point3(13,2,3);
 			lookat = point3(0,0,0);
 			vfov = 20;

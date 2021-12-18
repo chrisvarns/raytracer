@@ -1,5 +1,6 @@
 #pragma once
 
+#include "perlin.h"
 #include "rtweekend.h"
 
 class texture
@@ -35,4 +36,16 @@ public:
 	}
 
 	shared_ptr<texture> odd, even;
+};
+
+class noise_texture : public texture
+{
+public:
+	noise_texture() {}
+
+	virtual color value(float u, float v, const point3& p) const override {
+		return color(1,1,1) * noise.noise(p);
+	}
+
+	perlin noise;
 };
