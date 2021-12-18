@@ -12,7 +12,9 @@ public:
 		float vfov,
 		float aspect_ratio,
 		float aperture,
-		float focus_dist)
+		float focus_dist,
+		float time0_ = 0.f,
+		float time1_ = 0.f)
 	{
 		const auto theta = degrees_to_radians(vfov);
 		const auto h = tan(theta/2);
@@ -29,17 +31,23 @@ public:
 		lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist*w;
 
 		lens_radius = aperture / 2;
+		time0 = time0_;
+		time1 = time1_;
 	}
 
 	ray get_ray(float s, float t) const
 	{
+		vec3 offset;
 		if (lens_radius > 0.001f)
 		{
 			const vec3 rd = lens_radius * random_in_unit_disk();
-			const vec3 offset = u * rd.x + v * rd.y;
-			return ray(origin + offset, lower_left_corner + s*horizontal + t*vertical - origin - offset);
+			offset = u * rd.x + v * rd.y;
 		}
-		return ray(origin, lower_left_corner + s*horizontal + t*vertical - origin);
+		return ray(
+			origin,
+			lower_left_corner + s*horizontal + t*vertical - origin - offset,
+			random_float(time0, time1)
+		);
 	}
 
 private:
@@ -48,5 +56,6 @@ private:
 	vec3 horizontal;
 	vec3 vertical;
 	vec3 u, v, w;
-	float lens_radius = 0;
+	float lens_radius;
+	float time0, time1; // shutter open/close times
 };

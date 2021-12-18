@@ -2,6 +2,7 @@
 #include "color.h"
 #include "hittable_list.h"
 #include "material.h"
+#include "moving_sphere.h"
 #include "rtweekend.h"
 #include "sphere.h"
 
@@ -69,22 +70,23 @@ hittable_list random_scene()
 			const auto choose_mat = random_float();
 			point3 center(a + 0.9*random_float(), 0.2, b + 0.9*random_float());
 			if ((center - point3(4, 0.2, 0)).length() > 0.9) {
-				shared_ptr<material> sphere_material;
 				if (choose_mat < 0.8)
 				{
 					// diffuse
 					const auto albedo = color::random() * color::random();
-					sphere_material = make_shared<lambertian>(albedo);
+					const auto center2 = center + vec3(0, random_float(0,0.5), 0);
+					const auto sphere_material = make_shared<lambertian>(albedo);
+					world.add(make_shared<moving_sphere>(center, center2, 0.0, 1.0, 0.2, sphere_material));
 				} else if (choose_mat < 0.95) {
 					// metal
 					const auto albedo = color::random(0.5, 1);
 					const auto fuzz = random_float(0, 0.5);
-					sphere_material = make_shared<metal>(albedo, fuzz);
+					const auto sphere_material = make_shared<metal>(albedo, fuzz);
+					world.add(make_shared<sphere>(center, 0.2, sphere_material));
 				} else {
 					// glass
-					sphere_material = mat_dielectric;
+					world.add(make_shared<sphere>(center, 0.2, mat_dielectric));
 				}
-				world.add(make_shared<sphere>(center, 0.2, sphere_material));
 			}
 		}
 	}
@@ -96,7 +98,7 @@ int main()
 {
 	// Image
 	const auto aspect_ratio = 16.0 / 9.0;
-	const int image_width = 1280;
+	const int image_width = 800;
 	const int image_height = static_cast<int>(image_width / aspect_ratio);
 	const int samples_per_pixel = 32;
 	const int max_depth = 50;
@@ -109,8 +111,8 @@ int main()
 	const point3 lookat(0,0,0);
 	const vec3 vup(0,1,0);
 	const auto dist_to_focus = 10;
-	const auto aperture = 0.1;
-	const camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus);
+	const auto aperture = 0;
+	const camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
 
 	// Buffers
 	color* color_buffer = (color*)malloc(image_width * image_height * sizeof(color));
