@@ -112,7 +112,7 @@ int main()
 	const vec3 vup(0,1,0);
 	const auto dist_to_focus = 10;
 	const auto aperture = 0;
-	const camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+	const camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 0.2);
 
 	// Buffers
 	color* color_buffer = (color*)malloc(image_width * image_height * sizeof(color));

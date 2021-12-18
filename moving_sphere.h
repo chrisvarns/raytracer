@@ -1,5 +1,6 @@
 #pragma once
 
+#include "aabb.h"
 #include "rtweekend.h"
 #include "hittable.h"
 
@@ -13,6 +14,7 @@ public:
 	{}
 
 	virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const override;
+	virtual bool bounding_box(float time0, float time1, aabb& output_box) const override;
 
 	point3 get_center(double time) const;
 
@@ -55,5 +57,16 @@ bool moving_sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec)
 	const vec3 outward_normal = (rec.p - center) / radius;
 	rec.set_face_normal(r, outward_normal);
 	rec.mat_ptr = mat_ptr;
+	return true;
+}
+
+bool moving_sphere::bounding_box(float in_time0, float in_time1, aabb& output_box) const
+{
+	const auto center_at_in_time0 = get_center(in_time0);
+	const auto center_at_in_time1 = get_center(in_time1);
+	const vec3 radius3(radius);
+	const aabb box0(center_at_in_time0 - radius3, center_at_in_time0 + radius3);
+	const aabb box1(center_at_in_time1 - radius3, center_at_in_time1 + radius3);
+	output_box = surrounding_box(box0, box1);
 	return true;
 }

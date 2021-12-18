@@ -11,6 +11,7 @@ public:
 		: center(cen), radius(r), mat_ptr(m) {};
 
 	virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const override;
+	virtual bool bounding_box(float time0, float time1, aabb& output_box) const override;
 
 	point3 center;
 	float radius;
@@ -44,5 +45,11 @@ bool sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
 	const vec3 outward_normal = (rec.p - center) / radius;
 	rec.set_face_normal(r, outward_normal);
 	rec.mat_ptr = mat_ptr;
+	return true;
+}
+
+bool sphere::bounding_box(float time0, float time1, aabb& output_box) const
+{
+	output_box = aabb(center - vec3(radius), center + vec3(radius));
 	return true;
 }

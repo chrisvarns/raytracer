@@ -3,6 +3,8 @@
 #include <cmath>
 #include <iostream>
 
+#include "rtweekend.h"
+
 using std::sqrt;
 
 class vec3
@@ -13,7 +15,9 @@ public:
 	union { float y; float g; };
 	union { float z; float b; };
 
-	vec3(float x_ = 0.f, float y_ = 0.f, float z_ = 0.f) : x(x_), y(y_), z(z_) {}
+	vec3() : x(0), y(0), z(0) {}
+	vec3(float x_) : x(x_), y(x_), z(x_) {}
+	vec3(float x_, float y_, float z_) : x(x_), y(y_), z(z_) {}
 
 	vec3 operator-() const { return vec3(-x, -y, -z); }
 	float operator[](const int i) const { return y; }
@@ -132,6 +136,16 @@ vec3 refract(const vec3& uv, const vec3& n, float etai_over_etat)
 	const vec3 r_out_perp = etai_over_etat * (uv + cos_theta*n);
 	const vec3 r_out_parallel = -sqrt(fabs(1.0 - r_out_perp.length_squared())) * n;
 	return r_out_perp + r_out_parallel;
+}
+
+vec3 min(const vec3& a, const vec3& b)
+{
+	return vec3(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z));
+}
+
+vec3 max(const vec3& a, const vec3& b)
+{
+	return vec3(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z));
 }
 
 vec3 random_in_unit_sphere()

@@ -28,17 +28,39 @@ inline float degrees_to_radians(float degrees)
 	return degrees * pi / 180.0;
 }
 
+std::mt19937& get_generator()
+{
+	static thread_local std::mt19937 generator;
+	return generator;
+}
+
 inline float random_float(float min, float max)
 {
 	// returns a random real in [min,max)
-	static thread_local std::mt19937 generator;
 	std::uniform_real_distribution<float> distribution(min, max);
-	return distribution(generator);
+	return distribution(get_generator());
 }
 
 inline float random_float()
 {
 	return random_float(0, 1);
+}
+
+inline int random_int(int min, int max)
+{
+	// returns a random integer in [min,max]
+	std::uniform_int_distribution<> distribution(min, max+1);
+	return distribution(get_generator());
+}
+
+inline float min(float x, float y)
+{
+	return x < y ? x : y;
+}
+
+inline float max(float x, float y)
+{
+	return x > y ? x : y;
 }
 
 inline float clamp(float x, float min, float max)
