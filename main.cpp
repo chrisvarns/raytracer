@@ -33,7 +33,7 @@ int main()
 	const auto aspect_ratio = 16.0 / 9.0;
 	const int image_width = 400;
 	const int image_height = static_cast<int>(image_width / aspect_ratio);
-	const int samples_per_pixel = 128;
+	const int samples_per_pixel = 32;
 	const int max_depth = 50;
 
 	// World
@@ -41,28 +41,20 @@ int main()
 
 	auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
 	auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
-	auto material_left = make_shared<metal>(color(0.8, 0.8, 0.8), 0.3);
-	auto material_right	= make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
-	auto material_dielectric = make_shared<dielectric>(1.5);
+	auto material_left = make_shared<dielectric>(1.5);
+	auto material_right = make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
 
-	auto sphere_ground = make_shared<sphere>(point3(0.0, -100.5, -1.0), 100.0, material_ground);
-	auto sphere_center = make_shared<sphere>(point3(0.0, 0.0, -1.0), 0.5, material_center);
-	auto sphere_right = make_shared<sphere>(point3(1.0, 0.0, -1.0), 0.5, material_right);
-
-	auto sphere_left = make_shared<sphere>(point3(-1.0, 0.0, -1.0), 0.5, material_dielectric);
-	auto sphere_left_inner = make_shared<sphere>(point3(-1.0, 0.0, -1.0), -0.4, material_dielectric);
-
-	world.add(sphere_ground);
-	world.add(sphere_center);
-	world.add(sphere_right);
-	world.add(sphere_left);
-	world.add(sphere_left_inner);
+	world.add(make_shared<sphere>(point3(0.0, -100.5, -1.0), 100.0, material_ground));
+	world.add(make_shared<sphere>(point3(0.0, 0.0, -1.0), 0.5, material_center));
+	world.add(make_shared<sphere>(point3(-1.0, 0.0, -1.0), 0.5, material_left));
+	world.add(make_shared<sphere>(point3(-1.0, 0.0, -1.0), -0.45, material_left));
+	world.add(make_shared<sphere>(point3(1.0, 0.0, -1.0), 0.5, material_right));
 
 	// Camera
-	camera cam;
+	camera cam(point3(-2, 2, 1), point3(0, 0, -1), vec3(0, 1, 0), 20, aspect_ratio);
 
 	// Render
-	unsigned char image_data[image_width * image_height * 3];
+	unsigned char* image_data = (unsigned char*)malloc(image_width * image_height * 3);
 	unsigned char* image_data_ptr = image_data;
 	for (int j = image_height - 1; j >= 0; --j)
 	{
