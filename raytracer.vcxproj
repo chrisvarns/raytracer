@@ -167,6 +167,7 @@
     <ClInclude Include="rtweekend.h" />
     <ClInclude Include="sphere.h" />
     <ClInclude Include="stb_image_write.h" />
+    <ClInclude Include="texture.h" />
     <ClInclude Include="thirdparty\OpenImageDenoise\include\OpenImageDenoise\config.h" />
     <ClInclude Include="thirdparty\OpenImageDenoise\include\OpenImageDenoise\oidn.h" />
     <ClInclude Include="thirdparty\OpenImageDenoise\include\OpenImageDenoise\oidn.hpp" />

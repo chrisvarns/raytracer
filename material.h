@@ -1,20 +1,22 @@
 #pragma once
 
 #include "rtweekend.h"
+#include "texture.h"
 
 struct hit_record;
 
 class material
 {
 public:
-	virtual color get_albedo() const = 0;
+	virtual color get_albedo(float u, float v, const point3& p) const = 0;
 	virtual bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered) const = 0;
 };
 
 class lambertian : public material
 {
 public:
-	lambertian(const color& a) : albedo(a) {}
+	lambertian(const color& a) : albedo(make_shared<solid_color>(a)) {}
+	lambertian(const shared_ptr<texture>& a) : albedo(a) {}
 
 	virtual bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered) const override
 	{
@@ -25,13 +27,13 @@ public:
 			scatter_direction = rec.normal;
 
 		scattered = ray(rec.p, scatter_direction, r_in.time);
-		attenuation = albedo;
+		attenuation = albedo->value(rec.u, rec.v, rec.p);
 		return true;
 	}
 
-	virtual color get_albedo() const override { return albedo; }
+	virtual color get_albedo(float u, float v, const point3& p) const override { return albedo->value(u, v, p); }
 
-	color albedo;
+	shared_ptr<texture> albedo;
 };
 
 class metal : public material
@@ -47,7 +49,7 @@ public:
 		return dot(scattered.dir, rec.normal) > 0;
 	}
 
-	virtual color get_albedo() const override { return albedo; }
+	virtual color get_albedo(float u, float v, const point3& p) const override { return albedo; }
 
 	color albedo;
 	float fuzz;
@@ -76,7 +78,7 @@ public:
 		return true;
 	}
 
-	virtual color get_albedo() const override { return color(1,1,1); }
+	virtual color get_albedo(float u, float v, const point3& p) const override { return color(1,1,1); }
 
 	float ir; // index of refraction
 

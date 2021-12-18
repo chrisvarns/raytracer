@@ -26,7 +26,7 @@ color ray_albedo(const ray& r, const hittable& world)
 	hit_record rec;
 	if (world.hit(r, 0.001, infinity, rec))
 	{
-		return rec.mat_ptr->get_albedo();
+		return rec.mat_ptr->get_albedo(rec.u, rec.v, rec.p);
 	}
 
 	return ray_world_albedo(r);
@@ -65,8 +65,8 @@ hittable_list random_scene()
 	const auto mat_metal = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
 	world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, mat_metal));
 
-	for(int a = -11; a < 11; a++) {
-		for(int b = -11; b < 11; b++) {
+	for(int a = -5; a < 5; a++) {
+		for(int b = -5; b < 5; b++) {
 			const auto choose_mat = random_float();
 			point3 center(a + 0.9*random_float(), 0.2, b + 0.9*random_float());
 			if ((center - point3(4, 0.2, 0)).length() > 0.9) {
