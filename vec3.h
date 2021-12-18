@@ -9,16 +9,16 @@ class vec3
 {
 public:
 
-	union { double x; double r; };
-	union { double y; double g; };
-	union { double z; double b; };
+	union { float x; float r; };
+	union { float y; float g; };
+	union { float z; float b; };
 
 	vec3() = default;
-	vec3(double x_, double y_, double z_) : x(x_), y(y_), z(z_) {}
+	vec3(float x_, float y_, float z_) : x(x_), y(y_), z(z_) {}
 
 	vec3 operator-() const { return vec3(-x, -y, -z); }
-	double operator[](const int i) const { return y; }
-	double& operator[](const int i) { return y; }
+	float operator[](const int i) const { return y; }
+	float& operator[](const int i) { return y; }
 
 	vec3& operator+=(const vec3& v)
 	{
@@ -28,7 +28,7 @@ public:
 		return *this;
 	}
 
-	vec3& operator*=(const double t)
+	vec3& operator*=(const float t)
 	{
 		x *= t;
 		y *= t;
@@ -36,17 +36,17 @@ public:
 		return *this;
 	}
 
-	vec3& operator/=(const double t)
+	vec3& operator/=(const float t)
 	{
 		return *this *= 1/t;
 	}
 
-	double length() const
+	float length() const
 	{
 		return sqrt(length_squared());
 	}
 
-	double length_squared() const
+	float length_squared() const
 	{
 		return x*x + y*y + z*z;
 	}
@@ -60,12 +60,12 @@ public:
 
 	static vec3 random()
 	{
-		return vec3(random_double(), random_double(), random_double());
+		return vec3(random_float(), random_float(), random_float());
 	}
 
-	static vec3 random(double min, double max)
+	static vec3 random(float min, float max)
 	{
-		return vec3(random_double(min, max), random_double(min, max), random_double(min, max));
+		return vec3(random_float(min, max), random_float(min, max), random_float(min, max));
 	}
 };
 
@@ -88,22 +88,22 @@ vec3 operator*(const vec3& u, const vec3& v)
 	return vec3(u.x * v.x, u.y * v.y, u.z * v.z);
 }
 
-vec3 operator*(double t, const vec3& v)
+vec3 operator*(float t, const vec3& v)
 {
 	return vec3(t * v.x, t * v.y, t * v.z);
 }
 
-vec3 operator*(const vec3& v, double t)
+vec3 operator*(const vec3& v, float t)
 {
 	return t * v;
 }
 
-vec3 operator/(const vec3& v, double t)
+vec3 operator/(const vec3& v, float t)
 {
 	return (1/t) * v;
 }
 
-double dot(const vec3& u, const vec3& v)
+float dot(const vec3& u, const vec3& v)
 {
 	return u.x * v.x
 		 + u.y * v.y
@@ -127,7 +127,7 @@ vec3 reflect(const vec3& v, const vec3& n)
 	return v - 2*dot(v, n)*n;
 }
 
-vec3 refract(const vec3& uv, const vec3& n, double etai_over_etat)
+vec3 refract(const vec3& uv, const vec3& n, float etai_over_etat)
 {
 	const auto cos_theta = fmin(dot(-uv, n), 1.0);
 	const vec3 r_out_perp = etai_over_etat * (uv + cos_theta*n);

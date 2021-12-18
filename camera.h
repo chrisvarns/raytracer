@@ -9,8 +9,8 @@ public:
 		point3 lookfrom,
 		point3 lookat,
 		vec3 vup,
-		double vfov,
-		double aspect_ratio)
+		float vfov,
+		float aspect_ratio)
 	{
 		const auto theta = degrees_to_radians(vfov);
 		const auto h = tan(theta/2);
@@ -27,7 +27,7 @@ public:
 		lower_left_corner = origin - horizontal/2 - vertical/2 - w;
 	}
 
-	ray get_ray(double u, double v) const
+	ray get_ray(float u, float v) const
 	{
 		return ray(origin, lower_left_corner + u*horizontal + v*vertical - origin);
 	}

@@ -4,6 +4,8 @@
 #include "material.h"
 #include "rtweekend.h"
 #include "sphere.h"
+
+#include "OpenImageDenoise/oidn.hpp"
 #include "stb_image_write.h"
 
 color ray_color(const ray& r, const hittable& world, int depth)
@@ -31,9 +33,9 @@ int main()
 {
 	// Image
 	const auto aspect_ratio = 16.0 / 9.0;
-	const int image_width = 400;
+	const int image_width = 800;
 	const int image_height = static_cast<int>(image_width / aspect_ratio);
-	const int samples_per_pixel = 32;
+	const int samples_per_pixel = 24;
 	const int max_depth = 50;
 
 	// World
@@ -54,27 +56,59 @@ int main()
 	camera cam(point3(-2, 2, 1), point3(0, 0, -1), vec3(0, 1, 0), 20, aspect_ratio);
 
 	// Render
-	unsigned char* image_data = (unsigned char*)malloc(image_width * image_height * 3);
-	unsigned char* image_data_ptr = image_data;
+	color* color_buffer = (color*)malloc(image_width * image_height * sizeof(color));
+	color* color_buffer_pointer = color_buffer;
 	for (int j = image_height - 1; j >= 0; --j)
 	{
 		std::cout << "\rScanlines remaining: " << j << ' ' << std::flush;
-		for (int i = 0; i < image_width; ++i)
+		for (int i = 0; i < image_width; ++i, ++color_buffer_pointer)
 		{
-			color pixel_color(0,0,0);
+			*color_buffer_pointer = color(0,0,0);
 			for (int s = 0; s < samples_per_pixel; ++s)
 			{
-				const auto u = (i+random_double()) / (image_width-1);
-				const auto v = (j+random_double()) / (image_height-1);
+				const auto u = (i+random_float()) / (image_width-1);
+				const auto v = (j+random_float()) / (image_height-1);
 				const ray r = cam.get_ray(u, v);
-				pixel_color += ray_color(r, world, max_depth);
+				*color_buffer_pointer += ray_color(r, world, max_depth);
 			}
-			write_color(image_data_ptr, pixel_color, samples_per_pixel);
+
+			resolve_samples(*color_buffer_pointer, samples_per_pixel);
 		}
 	}
 
-	std::cout << "\nDone.\n";
+	std::cout << "\nDone.\nDenoising... ";
 
-	const char* image_filename = "image.png";
-	stbi_write_png(image_filename, image_width, image_height, 3, image_data, 0);
+	color* denoised_buffer = (color*)malloc(image_width * image_height * sizeof(color));
+
+	oidn::DeviceRef device = oidn::newDevice();
+	device.commit();
+	oidn::FilterRef filter = device.newFilter("RT");
+	filter.setImage("color", color_buffer, oidn::Format::Float3, image_width, image_height);
+	filter.setImage("output", denoised_buffer, oidn::Format::Float3, image_width, image_height);
+	filter.commit();
+	filter.execute();
+
+	std::cout << "Done.\nWriting files... ";
+
+	unsigned char* rgb888_buffer = (unsigned char*)malloc(image_width * image_height * 3);
+	unsigned char* rgb888_buffer_ptr = rgb888_buffer;
+	color_buffer_pointer = color_buffer;
+
+	// First write the pre-denoised
+	for (int i = 0; i < image_width * image_height; ++i, ++color_buffer_pointer, rgb888_buffer_ptr += 3)
+	{
+		write_color(rgb888_buffer_ptr, *color_buffer_pointer, samples_per_pixel);
+	}
+	stbi_write_png("predenoise.png", image_width, image_height, 3, rgb888_buffer, 0);
+
+	// Then write the denoised
+	rgb888_buffer_ptr = rgb888_buffer;
+	color_buffer_pointer = denoised_buffer;
+	for (int i = 0; i < image_width * image_height; ++i, ++color_buffer_pointer, rgb888_buffer_ptr += 3)
+	{
+		write_color(rgb888_buffer_ptr, *color_buffer_pointer, samples_per_pixel);
+	}
+	stbi_write_png("postdenoise.png", image_width, image_height, 3, rgb888_buffer, 0);
+
+	std::cout << "Done.\n";
 }

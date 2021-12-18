@@ -34,7 +34,7 @@ public:
 class metal : public material
 {
 public:
-	metal(const color& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
+	metal(const color& a, float f) : albedo(a), fuzz(f < 1 ? f : 1) {}
 
 	virtual bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered) const override
 	{
@@ -45,25 +45,25 @@ public:
 	}
 
 	color albedo;
-	double fuzz;
+	float fuzz;
 };
 
 class dielectric : public material
 {
 public:
-	dielectric(double ir_) : ir(ir_) {}
+	dielectric(float ir_) : ir(ir_) {}
 
 	virtual bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered) const override
 	{
 		attenuation = color(1.0, 1.0, 1.0);
-		const double refraction_ratio = rec.front_face ? (1.0/ir) : ir;
+		const float refraction_ratio = rec.front_face ? (1.0/ir) : ir;
 
 		const vec3 unit_direction = normalize(r_in.dir);
-		const double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
-		const double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
+		const float cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
+		const float sin_theta = sqrt(1.0 - cos_theta*cos_theta);
 
 		const bool cannot_refract = refraction_ratio * sin_theta > 1.0;
-		const vec3 direction = cannot_refract || reflectance(cos_theta, refraction_ratio) > random_double()
+		const vec3 direction = cannot_refract || reflectance(cos_theta, refraction_ratio) > random_float()
 			? reflect(unit_direction, rec.normal)
 			: refract(unit_direction, rec.normal, refraction_ratio);
 
@@ -71,10 +71,10 @@ public:
 		return true;
 	}
 
-	double ir; // index of refraction
+	float ir; // index of refraction
 
 private:
-	static double reflectance(double cosine, double ref_idx)
+	static float reflectance(float cosine, float ref_idx)
 	{
 		// use schlick's approximation for reflectance
 		auto r0 = (1.0-ref_idx) / (1.0+ref_idx);
